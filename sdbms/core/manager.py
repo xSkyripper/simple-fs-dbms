@@ -44,7 +44,7 @@ class DbManager(object):
     def add_column(self, name, col_name, col_type):
         # modify schema (add new col)
         # go into each record
-            # create another empty column (?is this really needed)
+            # create another empty column
         pass
     
     def del_column(self, name, col_name):
@@ -54,15 +54,42 @@ class DbManager(object):
         pass
     
     def insert_row(self, table, row={}):
+        # get table path
+        # get schema
+
+        # all records dirs names are number (e.g. 1, 2, 3...)
+        # get the maximum record name and + 1 on it (autoincrement)
+            # if no records found, default to 0
+        # create a record dir with the new name
+
+        # for each column in schema, create a file (e.g. name.str)
+        # put the data in it (e.g. from row['name'] in name.str)
         pass
     
     def scan_rows(self, table):
+        # get table path
+        # get schema
+
+        # for each record
+          # read the columns specified in schema
+          # put in a result dict
+
+        # return the dict
+        # e.g. [{'_rowid': 1, 'name': 'a', age: 1},
+        #       {'_rowid': 2, 'name': 'b', age: 18}]
         pass
     
     def delete_row(self, table, rowid):
+        # get table path
+        
+        # delete record dir with name rowid
         pass
     
     def update_row(self, table, rowid, new_row={}):
+        # get table path
+
+        # find record with dir name row id
+        # replace all values from columns of the record with new_row value
         pass
 
 

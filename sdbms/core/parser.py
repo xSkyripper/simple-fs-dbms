@@ -58,6 +58,8 @@ class UpdateCmd:
     pass
 
 
+class CommandError(Exception):
+    """ Generic command error """
 
 class QueryParser(object):
     re_db_create = re.compile(r'^create\s+sdb\s+(?P<name>\w+);$')
@@ -76,7 +78,7 @@ class QueryParser(object):
                          if callable(getattr(self.__class__, meth)) and meth.startswith('_parse')]
         
         for meth in parse_methods:
-            rv = meth(query)
+            rv = meth(self, query)
             if rv:
                 return rv
 
