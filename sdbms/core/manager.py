@@ -18,7 +18,6 @@ class DbManager(object):
         with open(schema_path, 'r') as fd:
             while True:
                 line = fd.readline().strip('\n')
-                print(line)
                 if not line:
                     break
                 col_name, col_type = line.split(',')
@@ -148,24 +147,49 @@ class DbManager(object):
         # return the dict
         # e.g. [{'_rowid': 1, 'name': 'a', age: 1},
         #       {'_rowid': 2, 'name': 'b', age: 18}]
-        
-        print(record_list)
+
         return record_list
         pass
     
-    def delete_row(self, table, rowid):
+    def delete_row(self, table, rowid): # am considerat rowid int
         # get table path
-        
+        table_path = os.path.join(self.db_path,table)
+        deleted_record = os.path.join(table_path,str(rowid))
+
+        shutil.rmtree(deleted_record) 
         # delete record dir with name rowid
+        records = [os.path.join(table_path, obj) for obj in os.listdir(table_path) if os.path.isdir(os.path.join(table_path,obj))]
+
+        for record in records:
+            dir_name = os.path.basename(record)
+            path_head = os.path.dirname(record)
+
+            dir_id = int(dir_name,10)
+            if dir_id > rowid:   #decrease with 1 every record bigger than the removed id record 
+                new_id = dir_id - 1
+                new_name = str(new_id)
+                updated_record = os.path.join(path_head,new_name)
+                os.rename(record,updated_record)
         pass
     
-    def update_row(self, table, rowid, new_row={}):
+    def update_row(self, table, rowid, new_row={}): # am considerat rowid int
         # get table path
-
+        table_path = os.path.join(self.db_path,table)
+        schema_path = os.path.join(table_path,SCHEMA)
+        
         # find record with dir name row id
+        update_record_path =  os.path.join(table_path,str(rowid))
+        schema = self._get_schema(schema_path)
+
         # replace all values from columns of the record with new_row value
+        for col_name, col_value in new_row.items():
+            col_type = schema[col_name]
+            file_name = f'{col_name}.{col_type}'
+            file_path = os.path.join(update_record_path,file_name)
+
+            fd = open(file_path,"w")
+            fd.write(f"{col_value}\n")
+            fd.close()
+
         pass
-
-
-
 
