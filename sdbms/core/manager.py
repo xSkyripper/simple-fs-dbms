@@ -54,7 +54,7 @@ class DbManager(object):
             # create another empty column
         for root,dirs,files in os.walk(table_path): # rework needed
             for current_row in dirs:
-                column_name = col_name +"."+col_type
+                column_name = f"{col_name}.{col_type}"
                 row_path = os.path.join(table_path,current_row)
                 column_path = os.path.join(row_path,column_name)
                 new_column = open(column_path,"w")
@@ -63,14 +63,32 @@ class DbManager(object):
     
     def del_column(self, name, col_name):
         # modify schema (look for the col and delete it)
+        table_path = os.path.join(self.db_path,name)
+        schema_path = os.path.join(table_path,SCHEMA)
+        current_schema = self._get_schema(schema_path)
+
+        # delete old schema and update new schema
+        if os.path.exists(schema_path):   # should be dead code 
+            os.remove(schema_path)
+
+        col_type = current_schema[col_name]
+        file_name = f"{col_name}.{col_type}"
+        del current_schema[col_name]
+        self._put_schema(current_schema,schema_path)
+
         # go into each record
             # delete column
+        subdirs = [os.path.join(table_path, obj) for obj in os.listdir(table_path) if os.path.isdir(os.path.join(table_path,obj))] 
+        for directory in subdirs:
+            directory_path = os.path.join(table_path,directory)
+            file_path = os.path.join(directory_path,file_name)
+            if os.path.exists(file_path):
+                os.remove(file_path)
         pass
     
     def insert_row(self, table, row={}):
         # get table path
         # get schema
-        # table means table_name
         table_path = os.path.join(self.db_path,table)
         schema_path = os.path.join(table_path,SCHEMA)
         current_schema = self._get_schema(schema_path)
@@ -102,14 +120,37 @@ class DbManager(object):
     def scan_rows(self, table):
         # get table path
         # get schema
+        table_path = os.path.join(self.db_path,table)
+        schema_path = os.path.join(table_path,SCHEMA)
+        current_schema = self._get_schema(schema_path)
+
+        # get all records
+        subdirs = [os.path.join(table_path, obj) for obj in os.listdir(table_path) if os.path.isdir(os.path.join(table_path,obj))]
+        record_list = []
 
         # for each record
           # read the columns specified in schema
           # put in a result dict
+        for record in subdirs:
+            record_path = os.path.join(table_path,record)
+            current_record = {}
+            # for each column of the record read the corresponding value from the file
+            for col_name,col_type in current_schema.items():
+                current_column = f"{col_name}.{col_type}"
+                column_path = os.path.join(record_path,current_column)
+                fd = open(column_path,"r")
+                line = fd.readline()
+                fd.close()
+                current_record[col_name] = line
+            #end record columns
+            record_list.append(current_record)
 
         # return the dict
         # e.g. [{'_rowid': 1, 'name': 'a', age: 1},
         #       {'_rowid': 2, 'name': 'b', age: 18}]
+        
+        print(record_list)
+        return record_list
         pass
     
     def delete_row(self, table, rowid):
