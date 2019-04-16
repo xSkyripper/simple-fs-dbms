@@ -11,3 +11,9 @@ class SimpleDb(object):
     def execute(self, query):
         cmd = self._parser.parse(query)
         return cmd.execute(self._manager)
+    
+    def from_csv(self, csv_path):
+        pass
+    
+    def to_csv(self, csv_path):
+        pass
