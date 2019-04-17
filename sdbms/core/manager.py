@@ -5,10 +5,16 @@ SCHEMA = '.schema'
 
 
 class DbManager(object):
-    def __init__(self, db_name, root_path):
-        self.db_name = db_name
-        self.root_path = root_path
-        self.db_path = os.path.join(root_path, db_name)
+    def __init__(self, root_path):
+        self.root_path = root_path or '.'
+        self._db_name = None
+        self._db_path = None
+
+    @property
+    def db_path(self):
+        if self._db_path is None:
+            raise AttributeError('You need to set the SDB first')
+        return self._db_path
 
     def _put_schema(self, schema_path, schema):
         with open(schema_path, 'w') as fd:
@@ -37,11 +43,21 @@ class DbManager(object):
             if os.path.isdir(row_dir):
                 yield row_dir
 
-    def create_db(self):
-        os.mkdir(self.db_path)
+    def create_db(self, name):
+        path = os.path.join(self.root_path, name)
+        os.mkdir(path)
 
-    def delete_db(self):
-        shutil.rmtree(self.db_path)
+    def use_db(self, name):
+        path = os.path.join(self.root_path, name)
+        if not os.path.exists(path) or not os.path.isdir(path):
+            raise ValueError(f'SDB {name}/ does not exist or is not a dir!')
+
+        self._db_name = name
+        self._db_path = path
+
+    def delete_db(self, name):
+        path = os.path.join(self.root_path, name)
+        shutil.rmtree(path)
 
     def create_table(self, name, schema={}):
         table_path = os.path.join(self.db_path, name)
@@ -159,9 +175,10 @@ class DbManager(object):
         row_dir = os.path.join(table_path, str(rowid))
 
         # replace all values from columns of the record with new_row value
-        for col_name, col_type in schema.items():
+        for col_name, col_value in new_row.items():
+            col_type = schema[col_name]
             col_filename = f'{col_name}.{col_type}'
             col_file = os.path.join(row_dir, col_filename)
 
             with open(col_file, 'w') as fd:
-                fd.write(new_row[col_name])
+                fd.write(col_value)

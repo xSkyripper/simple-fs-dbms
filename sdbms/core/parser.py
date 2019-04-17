@@ -4,12 +4,13 @@ from collections import namedtuple
 
 
 SCHEMA_TYPES = {'str', 'int', 'bool'}
+ROWID_KEY = '_rowid'
 
 class Literal(namedtuple('Literal', 'value')):
     @classmethod
     def eval_value(cls, value):
         if not isinstance(value, str):
-            raise ValueError(f"Parameter must be a str")
+            raise ValueError(f"Parameter {value} must be a str")
 
         if value in ('True', 'False'):
             return eval(value)
@@ -44,13 +45,14 @@ class Comparison(namedtuple('Comparison', 'left, op, right')):
     }
 
     def match(self, row):
+        print(f"Comparing this: {self.left} {self.op} {self.right}")
         if type(self.left) is Column:
-            left = row[self.left.name]
+            left = Literal(row[self.left.name]).value
         elif type(self.left) is Literal:
             left = self.left.value
 
         if type(self.right) is Column:
-            right = row[self.right.name]
+            right = Literal(row[self.right.name]).value
         else:
             right = self.right.value
 
@@ -60,17 +62,24 @@ class ConditionList(namedtuple('ConditionList', 'comp_type, comparisons')):
     types = {'or': any, 'and': all}
     
     def match(self, row):
-        return self.types[self.comp_type](comp.match(row) for comp in self.comparisons)
+        if not self.comp_type:
+            return True
+        return self.types[self.comp_type](comp.match(row) 
+                                          for comp in self.comparisons)
 
 
 
-class CreateDbCmd(namedtuple('CreateDbCmd', '')):
+class CreateDbCmd(namedtuple('CreateDbCmd', 'name')):
     def execute(self, db_manager):
-        db_manager.create_db()
+        db_manager.create_db(self.name)
 
-class DeleteDbCmd(namedtuple('DeleteDbCmd', '')):
+class UseDbCmd(namedtuple('UseDbCmd', 'name')):
     def execute(self, db_manager):
-        db_manager.delete_db()
+        db_manager.use_db(self.name)
+
+class DeleteDbCmd(namedtuple('DeleteDbCmd', 'name')):
+    def execute(self, db_manager):
+        db_manager.delete_db(self.name)
 
 class CreateTableCmd(namedtuple('CreateTableCmd', 'name, schema')):
     def validate(self):
@@ -110,46 +119,94 @@ class DelColumnCmd(namedtuple('DelColumnCmd', 'name, col_name')):
         self.validate(db_manager)
         db_manager.del_column(name=self.name, col_name=self.col_name)
 
+def validate_cmd_row_values(schema={}, row={}):
+    for col_name, col_val in row.items():
+        lit_val = Literal(col_val)
+        needed_col_type = eval(schema[col_name])
+        if not isinstance(lit_val.value, needed_col_type):
+            raise CommandError(f'Col\'s {col_name} value {col_val} \
+                                 has to be {schema[col_name]}')
+
 class InsertCmd(namedtuple('InsertCmd', 'table, row')):
     def validate(self, db_manager):
         schema = db_manager.get_table_schema(table_name=self.table)
         if self.row.keys() != schema.keys():
             raise CommandError(f'Schema {schema.keys()} is mandatory')
 
-        for col_name, col_val in self.row.items():
-            evaled_col_val = Literal.eval_value(col_val)
-            needed_col_type = eval(schema[col_name])
-            if not isinstance(evaled_col_val, needed_col_type):
-                raise CommandError(f'Col\'s {col_name} value {col_val} \
-                                     has to be {schema[col_name]}')
+        validate_cmd_row_values(schema=schema, row=self.row)
+
 
     def execute(self, db_manager):
         self.validate(db_manager)
         db_manager.insert_row(table=self.table, row=self.row)
 
+def validate_cmd_conditions_list(schema={}, conditions_list=[]):
+    for comparison in conditions_list.comparisons:
+        col = comparison.left
+        lit = comparison.right
+        needed_col_type = eval(schema[col.name])
+        if col.name not in schema:
+            raise CommandError(f'Col {col.name} in conditions \
+                                    does not exist in schema')
+        if not isinstance(lit.value, needed_col_type):
+            raise CommandError(f'Col\'s {col.name} value {lit.value} \
+                                    has to be {schema[col.name]}')
+
 class QueryCmd(namedtuple('QueryCmd', 'table, projection, conditions_list')):
+    def validate(self, db_manager):
+        schema = db_manager.get_table_schema(table_name=self.table)
+        
+        if len(self.projection) > 1 and self.projection[0] != '*':
+            if set(self.projection) - set(schema.keys()):
+                raise CommandError(f'Query projection is enforced by schema; \
+                                     Only {schema.keys()} or * are allowed')
+        validate_cmd_conditions_list(schema=schema, 
+                                     conditions_list=self.conditions_list)
+
     def execute(self, db_manager):
-        print(f'########## QueryCmd.execute ##########')
-        print(f'validate projection {self.projection} on .schema')
-        print(f'validate conditions {self.conditions_list} on .schema (if any)')
-        print(f'call db_manager.scan_rows({self.table})')
-        print(f'return results filtered by projection & conditions')
+        self.validate(db_manager)
+        star_proj = len(self.projection) == 1 and self.projection[0] == '*'
+
+        for row in db_manager.scan_rows(table=self.table):
+            if self.conditions_list.match(row):
+                result_row = {ROWID_KEY: row[ROWID_KEY]}
+                del row[ROWID_KEY]
+
+                for key, val in row.items():
+                    if not star_proj:
+                        if key in self.projection:
+                            result_row[key] = Literal(val).value
+                    else:
+                        result_row[key] = Literal(val).value
+
+                yield result_row
+
+
 
 class DeleteCmd(namedtuple('DeleteCmd', 'table, conditions_list')):
+    def validate(self, db_manager):
+        schema = db_manager.get_table_schema(table_name=self.table)
+        validate_cmd_conditions_list(schema, self.conditions_list)
+
     def execute(self, db_manager):
-        print(f'########## DeleteCmd.execute ##########')
-        print(f'validate conditions {self.conditions_list} on .schema (if any)')
-        print(f'call db_manager.scan_rows({self.table})')
-        print(f'delete results filtered by conditions')
+        self.validate(db_manager)
+        for row in db_manager.scan_rows(table=self.table):
+            if self.conditions_list.match(row):
+                db_manager.delete_row(table=self.table, rowid=row['_rowid'])
 
 class UpdateCmd(namedtuple('UpdateCmd', 'table, values, conditions_list')):
-    def execute(self, db_manager):
-        print(f'########## UpdateCmd.execute ##########')
-        print(f'validate values {self.values} on .schema')
-        print(f'validate conditions {self.conditions_list} on .schema (if any)')
-        print(f'call db_manager.scan_rows({self.table})')
-        print(f'update results filtered by conditions with new values')
+    def validate(self, db_manager):
+        schema = db_manager.get_table_schema(table_name=self.table)
+        validate_cmd_row_values(schema=schema, row=self.values)
+        validate_cmd_conditions_list(schema=schema,
+                                     conditions_list=self.conditions_list)
 
+    def execute(self, db_manager):
+        self.validate(db_manager)
+        for row in db_manager.scan_rows(table=self.table):
+            if self.conditions_list.match(row):
+                db_manager.update_row(table=self.table,
+                                      rowid=row['_rowid'], new_row=self.values)
 
 
 
@@ -158,6 +215,7 @@ class CommandError(Exception):
 
 class QueryParser(object):
     re_db_create = re.compile(r'^create\s+sdb\s+(?P<name>\w+);$')
+    re_db_use = re.compile(r'^use\s+sdb\s+(?P<name>\w+);$')
     re_db_delete = re.compile(r'^delete\s+sdb\s+(?P<name>\w+);$')
     re_table_create_main = re.compile(r'^create\s+table\s+(?P<name>\w+)\s+columns\s+(?P<columns>((int|str|bool):(\w+)\s?)+);$')
     re_table_create_col = re.compile(r'(int|str|bool):(\w+)')
@@ -166,7 +224,7 @@ class QueryParser(object):
     re_table_del_column = re.compile(r'^change\s+table\s+(?P<name>\w+)\s+del\s+column\s+(?P<col_name>\w+);$')
     re_table_insert_main = re.compile(r'^insert\s+into\s+(?P<table_name>\w+)\s+values\s+(?P<values>(\w+=(True|False|\d+?|\"(\w|[\/\<\>:`~.,?!@;\'#$%\^&*\-_+=\[\{\]\}\\\|()\ ])*?\")\s?)+?);$')
     re_table_values = re.compile(r'(\w+)=(True|False|(\d+)|\"([A-Za-z0-9\/\<\>\:\`\~\.\,\?\!\@\;\'\#\$\%\^\&\*\-\_\+\=\[\{\]\}\\\|\(\)\ ])*?\")')
-    re_where_conditions = re.compile(r'(?P<col_name>\w+?)(?P<op>=|!=|<|>|<=|>=)(?P<value>(\d+?)|(True|False)|\"([A-Za-z0-9\/\<\>\:\`\~\.\,\?\!\@\;\'\#\$\%\^\&\*\-\_\+\=\[\{\]\}\\\|\(\)\ ])*?\")')
+    re_where_conditions = re.compile(r'(?P<col_name>\w+?)(?P<op>=|!=|<|>|<=|>=)(?P<value>(\d+)|(True|False)|\"([A-Za-z0-9\/\<\>\:\`\~\.\,\?\!\@\;\'\#\$\%\^\&\*\-\_\+\=\[\{\]\}\\\|\(\)\ ])*?\")')
     re_table_scan_rows = re.compile(r'^query\s+(?P<projection>\*|(\w+\,?)+?)\s+(?P<table_name>\w+)(\s+where\s+op:(?P<op>or|and)\s+conditions\s+(?P<conditions>((\w+?)(=|!=|<|>|<=|>=)((\d+?)|(True|False)|\"([A-Za-z0-9\/\<\>\:\`\~\.\,\?\!\@\;\'\#\$\%\^\&\*\-\_\+\=\[\{\]\}\\\|\(\)\ ])*?\")(\s+)?)+))?;$')
     re_table_update_rows = re.compile(r'^update\s+(?P<table_name>\w+)\s+set\s+(?P<setters>(((\w+)=(True|False|(\d+)|\"([A-Za-z0-9\/\<\>\:\`\~\.\,\?\!\@\;\'\#\$\%\^\&\*\-\_\+\=\[\{\]\}\\\|\(\)\ ])*?\"))\s?)+)(\s+where\s+op:(?P<op>or|and)\s+conditions\s+(?P<conditions>((\w+?)(=|!=|<|>|<=|>=)((\d+?)|(True|False)|\"([A-Za-z0-9\/\<\>\:\`\~\.\,\?\!\@\;\'\#\$\%\^\&\*\-\_\+\=\[\{\]\}\\\|\(\)\ ])*?\")(\s+)?)+))?;$')
     re_table_delete_rows = re.compile(r'^delete\s+in\s+(?P<table_name>\w+)(\s+where\s+op:(?P<op>or|and)\s+conditions\s+(?P<conditions>((\w+?)(=|!=|<|>|<=|>=)((\d+?)|(True|False)|\"([A-Za-z0-9\/\<\>\:\`\~\.\,\?\!\@\;\'\#\$\%\^\&\*\-\_\+\=\[\{\]\}\\\|\(\)\ ])*?\")(\s+)?)+))?;$')
@@ -193,7 +251,14 @@ class QueryParser(object):
             return
 
         return CreateDbCmd(name=result.group('name'))
-    
+
+    def _parse_db_use(self, query):
+        result = self.re_db_use.fullmatch(query)
+        if not result:
+            return
+
+        return UseDbCmd(name=result.group('name'))
+
     def _parse_db_delete(self, query):
         result = self.re_db_delete.fullmatch(query)
         if not result:
@@ -265,12 +330,12 @@ class QueryParser(object):
         main_op = result_main.group('op')
         conditions_str = result_main.group('conditions')
 
-        conditions = []
+        conditions = ConditionList('', [])
         if conditions_str:
             result_conditions = self.re_where_conditions.findall(conditions_str)
-            conditions = ConditionList(
-                main_op, [Comparison(Column(left), op, Literal(right))
-                          for left, op, right, _, _, _ in result_conditions])
+            conditions = ConditionList(main_op,
+                            [Comparison(Column(left), op, Literal(right))
+                            for left, op, right, _, _, _ in result_conditions])
 
         return QueryCmd(table=name, projection=projection, 
                         conditions_list=conditions)
@@ -289,12 +354,12 @@ class QueryParser(object):
         main_op = result_main.group('op')
         conditions_str = result_main.group('conditions')
         
-        conditions = []
+        conditions = ConditionList('', [])
         if conditions_str:
             result_conditions = self.re_where_conditions.findall(conditions_str)
-            conditions = ConditionList(
-                main_op, [Comparison(Column(left), op, Literal(right))
-                          for left, op, right, _, _, _ in result_conditions])
+            conditions = ConditionList(main_op,
+                            [Comparison(Column(left), op, Literal(right))
+                            for left, op, right, _, _, _ in result_conditions])
         
         new_values = {col_name: col_value for col_name, col_value, _, _ in result_setters}
         
@@ -310,11 +375,11 @@ class QueryParser(object):
         main_op = result_main.group('op')
         conditions_str = result_main.group('conditions')
 
-        conditions = []
+        conditions = ConditionList('', [])
         if conditions_str:
             result_conditions = self.re_where_conditions.findall(conditions_str)
-            conditions = ConditionList(
-                main_op, [Comparison(Column(left), op, Literal(right))
-                          for left, op, right, _, _, _ in result_conditions])
+            conditions = ConditionList(main_op,
+                            [Comparison(Column(left), op, Literal(right))
+                            for left, op, right, _, _, _ in result_conditions])
         
         return DeleteCmd(table=name, conditions_list=conditions)
