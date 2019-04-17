@@ -45,7 +45,6 @@ class Comparison(namedtuple('Comparison', 'left, op, right')):
     }
 
     def match(self, row):
-        print(f"Comparing this: {self.left} {self.op} {self.right}")
         if type(self.left) is Column:
             left = Literal(row[self.left.name]).value
         elif type(self.left) is Literal:
@@ -124,8 +123,7 @@ def validate_cmd_row_values(schema={}, row={}):
         lit_val = Literal(col_val)
         needed_col_type = eval(schema[col_name])
         if not isinstance(lit_val.value, needed_col_type):
-            raise CommandError(f'Col\'s {col_name} value {col_val} \
-                                 has to be {schema[col_name]}')
+            raise CommandError(f'Col\'s {col_name} value {col_val} has to be {schema[col_name]}')
 
 class InsertCmd(namedtuple('InsertCmd', 'table, row')):
     def validate(self, db_manager):
@@ -146,20 +144,17 @@ def validate_cmd_conditions_list(schema={}, conditions_list=[]):
         lit = comparison.right
         needed_col_type = eval(schema[col.name])
         if col.name not in schema:
-            raise CommandError(f'Col {col.name} in conditions \
-                                    does not exist in schema')
+            raise CommandError(f'Col {col.name} in conditions does not exist in schema')
         if not isinstance(lit.value, needed_col_type):
-            raise CommandError(f'Col\'s {col.name} value {lit.value} \
-                                    has to be {schema[col.name]}')
+            raise CommandError(f'Col\'s {col.name} value {lit.value} has to be {schema[col.name]}')
 
 class QueryCmd(namedtuple('QueryCmd', 'table, projection, conditions_list')):
     def validate(self, db_manager):
         schema = db_manager.get_table_schema(table_name=self.table)
         
-        if len(self.projection) > 1 and self.projection[0] != '*':
+        if self.projection[0] != '*':
             if set(self.projection) - set(schema.keys()):
-                raise CommandError(f'Query projection is enforced by schema; \
-                                     Only {schema.keys()} or * are allowed')
+                raise CommandError(f'Query projection is enforced by schema; Only {schema.keys()} or * are allowed')
         validate_cmd_conditions_list(schema=schema, 
                                      conditions_list=self.conditions_list)
 
