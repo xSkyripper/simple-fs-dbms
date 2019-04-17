@@ -1,12 +1,13 @@
 import os
 import shutil
 
-DB_PREFIX = 'sdb'
 SCHEMA = '.schema'
 
 
 class DbManager(object):
     def __init__(self, db_name, root_path):
+        self.db_name = db_name
+        self.root_path = root_path
         self.db_path = os.path.join(root_path, db_name)
 
     def _put_schema(self, schema_path, schema):
@@ -24,6 +25,11 @@ class DbManager(object):
                 col_name, col_type = col.split(',')
                 schema[col_name] = col_type
         return schema
+
+    def get_table_schema(self, table_name):
+        table_path = os.path.join(self.db_path, table_name)
+        schema_path = os.path.join(table_path, SCHEMA)
+        return self._get_schema(schema_path)
 
     def _row_dirs(self, table_path):
         for row_dirname in os.listdir(table_path):

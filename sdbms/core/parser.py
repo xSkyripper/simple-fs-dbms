@@ -3,6 +3,8 @@ import operator
 from collections import namedtuple
 
 
+SCHEMA_TYPES = {'str', 'int', 'bool'}
+
 class Literal(namedtuple('Literal', 'value')):
     @classmethod
     def eval_value(cls, value):
@@ -62,44 +64,68 @@ class ConditionList(namedtuple('ConditionList', 'comp_type, comparisons')):
 
 
 
-class CreateDbCmd(namedtuple('CreateDbCmd', 'name')):
+class CreateDbCmd(namedtuple('CreateDbCmd', '')):
     def execute(self, db_manager):
-        print(f'########## CreateDbCmd.execute ##########')
-        print(f'call db_manager.create_db({self.name})')
+        db_manager.create_db()
 
-class DeleteDbCmd(namedtuple('DeleteDbCmd', 'name')):
+class DeleteDbCmd(namedtuple('DeleteDbCmd', '')):
     def execute(self, db_manager):
-        print(f'########## DeleteDbCmd.execute ##########')
-        print(f'call db_manager.delete_db({self.name})')
+        db_manager.delete_db()
 
 class CreateTableCmd(namedtuple('CreateTableCmd', 'name, schema')):
+    def validate(self):
+        if len(set(self.schema)) != len(self.schema):
+            raise CommandError('Cannot have duplicate columns in table schema')
+        if set(self.schema.values()) - SCHEMA_TYPES:
+            raise CommandError(f'Only schema accepted types are {SCHEMA_TYPES}')
+
     def execute(self, db_manager):
-        print(f'########## CreateTableCmd.execute ##########')
-        print(f'validate schema {self.schema} (duplicate columns & misc)')
-        print(f'call db_manager.create_table({self.name}, {self.schema})')
+        self.validate()
+        db_manager.create_table(name=self.name, schema=self.schema)
 
 class DeleteTableCmd(namedtuple('DeleteTableCmd', 'name')):
     def execute(self, db_manager):
-        print(f'########## DeleteTableCmd.execute ##########')
-        print(f'call db_manager.delete_table({self.name})')
+        db_manager.delete_table(name=self.name)
 
 class AddColumnCmd(namedtuple('AddColumnCmd', 'name, col_type, col_name')):
+    def validate(self, db_manager):
+        schema = db_manager.get_table_schema(table_name=self.name)
+        if self.col_name in schema:
+            raise CommandError(f'{self.col_name} col is already existing')
+        if self.col_type not in SCHEMA_TYPES:
+            raise CommandError(f'Only schema accepted types are {SCHEMA_TYPES}')
+
     def execute(self, db_manager):
-        print(f'########## AddColumnCmd.execute ##########')
-        print(f'validate added column {self.col_type}:{self.col_name} on .schema (does not exist & misc)')
-        print(f'call db_manager.add_column({self.name}, {self.col_name}, {self.col_type})')
+        self.validate(db_manager)
+        db_manager.add_column(name=self.name,
+                              col_name=self.col_name, col_type=self.col_type)
 
 class DelColumnCmd(namedtuple('DelColumnCmd', 'name, col_name')):
+    def validate(self, db_manager):
+        schema = db_manager.get_table_schema(table_name=self.name)
+        if self.col_name not in schema:
+            raise CommandError(f'Col {self.col_name} does not exist')
+
     def execute(self, db_manager):
-        print(f'########## DelColumnCmd.execute ##########')
-        print(f'validate deleted column {self.col_name} on .schema (does not exist & misc)')
-        print(f'call db_manager.del_column({self.name}, {self.col_name})')
+        self.validate(db_manager)
+        db_manager.del_column(name=self.name, col_name=self.col_name)
 
 class InsertCmd(namedtuple('InsertCmd', 'table, row')):
+    def validate(self, db_manager):
+        schema = db_manager.get_table_schema(table_name=self.table)
+        if self.row.keys() != schema.keys():
+            raise CommandError(f'Schema {schema.keys()} is mandatory')
+
+        for col_name, col_val in self.row.items():
+            evaled_col_val = Literal.eval_value(col_val)
+            needed_col_type = eval(schema[col_name])
+            if not isinstance(evaled_col_val, needed_col_type):
+                raise CommandError(f'Col\'s {col_name} value {col_val} \
+                                     has to be {schema[col_name]}')
+
     def execute(self, db_manager):
-        print(f'########## InsertCmd.execute ##########')
-        print(f'validate row {self.row} on .schema (has right column name, types)')
-        print(f'call db_manager.insert_row({self.table}, {self.row})')
+        self.validate(db_manager)
+        db_manager.insert_row(table=self.table, row=self.row)
 
 class QueryCmd(namedtuple('QueryCmd', 'table, projection, conditions_list')):
     def execute(self, db_manager):
@@ -225,7 +251,8 @@ class QueryParser(object):
         result_values = self.re_table_values.findall(values_str)
         if not result_values:
             return
-        row = {col_name:col_value for col_name, col_value, _, _ in result_values}
+        row = {col_name:col_value
+               for col_name, col_value, _, _ in result_values}
 
         return InsertCmd(table=name, row=row)
     
@@ -243,9 +270,10 @@ class QueryParser(object):
             result_conditions = self.re_where_conditions.findall(conditions_str)
             conditions = ConditionList(
                 main_op, [Comparison(Column(left), op, Literal(right))
-                        for left, op, right, _, _, _ in result_conditions])
+                          for left, op, right, _, _, _ in result_conditions])
 
-        return QueryCmd(table=name, projection=projection, conditions_list=conditions)
+        return QueryCmd(table=name, projection=projection, 
+                        conditions_list=conditions)
 
     def _parse_table_update_rows(self, query):
         result_main = self.re_table_update_rows.fullmatch(query)
