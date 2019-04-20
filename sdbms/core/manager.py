@@ -182,3 +182,56 @@ class DbManager(object):
 
             with open(col_file, 'w') as fd:
                 fd.write(col_value)
+    
+    def to_csv(self, csv_path):
+        # recursive lookup into each table
+            # recursive lookup on each row
+                # recursive lookup on each column
+        
+        # csv_path: something.csv
+        """ input >>>
+        mydb/
+            users/
+                .schema
+                0/
+                    name.str
+                    age.int
+                1/
+                    name.str
+                    age.int
+                2/
+                    name.str
+                    age.int
+            things/
+                .schema
+                0/
+                    title.str
+                    price.int
+                1/
+                    title.str
+                    price.int
+        """
+
+        """ output <<<
+        users, str:name, int:age
+        users, 0, name, <val>
+        users, 0, age, <val>
+        users, 1, name, <val>
+        users, 1, age, <val>
+
+        things, str:title, int:price
+        things, 0, title, <val>
+        things, 0, price, <val>
+        """
+        pass
+    
+    def from_csv(self, csv_path):
+        # parse csv
+        # recreate db
+        # recreate all tables
+        # recreate all schemas for each table
+        # recreate all rows for each table
+        # recreate all columns for each row
+        # note: tables are separated by empty new line
+        # note2: first row of table data is schema
+        pass

@@ -203,6 +203,29 @@ class UpdateCmd(namedtuple('UpdateCmd', 'table, values, conditions_list')):
                 db_manager.update_row(table=self.table,
                                       rowid=row['_rowid'], new_row=self.values)
 
+class FromCsvCmd(namedtuple('FromCsvCmd', 'csv_path')):
+    def validate(self, db_manager):
+        pass
+
+    def execute(self, db_manager):
+        print(f'execute args {self.csv_path}')
+        self.validate(db_manager)
+
+class ToCsvCmd(namedtuple('ToCsvCmd', 'db_name, csv_path')):
+    def validate(self, db_manager):
+        pass
+
+    def execute(self, db_manager):
+        print(f'execute args {self.db_name} {self.csv_path}')
+        self.validate(db_manager)
+
+class SchemaCmd(namedtuple('FromCsvCmd', 'table_name')):
+    def validate(self, db_manager):
+        pass
+
+    def execute(self, db_manager):
+        print(f'execute args {self.table_name}')
+        self.validate(db_manager)
 
 
 class CommandError(Exception):
@@ -223,6 +246,9 @@ class QueryParser(object):
     re_table_scan_rows = re.compile(r'^query\s+(?P<projection>\*|(\w+\,?)+?)\s+(?P<table_name>\w+)(\s+where\s+op:(?P<op>or|and)\s+conditions\s+(?P<conditions>((\w+?)(=|!=|<|>|<=|>=)((\d+?)|(True|False)|\"([A-Za-z0-9\/\<\>\:\`\~\.\,\?\!\@\;\'\#\$\%\^\&\*\-\_\+\=\[\{\]\}\\\|\(\)\ ])*?\")(\s+)?)+))?;$')
     re_table_update_rows = re.compile(r'^update\s+(?P<table_name>\w+)\s+set\s+(?P<setters>(((\w+)=(True|False|(\d+)|\"([A-Za-z0-9\/\<\>\:\`\~\.\,\?\!\@\;\'\#\$\%\^\&\*\-\_\+\=\[\{\]\}\\\|\(\)\ ])*?\"))\s?)+)(\s+where\s+op:(?P<op>or|and)\s+conditions\s+(?P<conditions>((\w+?)(=|!=|<|>|<=|>=)((\d+?)|(True|False)|\"([A-Za-z0-9\/\<\>\:\`\~\.\,\?\!\@\;\'\#\$\%\^\&\*\-\_\+\=\[\{\]\}\\\|\(\)\ ])*?\")(\s+)?)+))?;$')
     re_table_delete_rows = re.compile(r'^delete\s+in\s+(?P<table_name>\w+)(\s+where\s+op:(?P<op>or|and)\s+conditions\s+(?P<conditions>((\w+?)(=|!=|<|>|<=|>=)((\d+?)|(True|False)|\"([A-Za-z0-9\/\<\>\:\`\~\.\,\?\!\@\;\'\#\$\%\^\&\*\-\_\+\=\[\{\]\}\\\|\(\)\ ])*?\")(\s+)?)+))?;$')
+    re_from_csv = re.compile(r'^from\s+csv\s+(?P<csv_path>[^ ]+?\.csv)\s*?;$')
+    re_to_csv = re.compile(r'^to\s+csv\s+(?P<db_name>\w+?)\s+(?P<csv_path>[^ ]+?\.csv)\s*?;$')
+    re_schema = re.compile(r'^schema\s+(?P<table_name>\w+)\s*?;$')
 
     def __init__(self):
         pass
@@ -378,3 +404,31 @@ class QueryParser(object):
                             for left, op, right, _, _, _ in result_conditions])
         
         return DeleteCmd(table=name, conditions_list=conditions)
+
+    def _parse_from_csv(self, query):
+        result = self.re_from_csv.fullmatch(query)
+        if not result:
+            return
+        
+        csv_path = result.group('csv_path')
+
+        return FromCsvCmd(csv_path=csv_path)
+    
+    def _parse_to_csv(self, query):
+        result = self.re_to_csv.fullmatch(query)
+        if not result:
+            return
+        
+        db_name = result.group('db_name')
+        csv_path = result.group('csv_path')
+ 
+        return ToCsvCmd(db_name=db_name, csv_path=csv_path)
+    
+    def _parse_schema(self, query):
+        result = self.re_schema.fullmatch(query)
+        if not result:
+            return
+
+        table_name = result.group('table_name')
+
+        return SchemaCmd(table_name=table_name)
