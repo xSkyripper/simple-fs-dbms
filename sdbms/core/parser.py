@@ -224,8 +224,9 @@ class SchemaCmd(namedtuple('FromCsvCmd', 'table_name')):
         pass
 
     def execute(self, db_manager):
-        print(f'execute args {self.table_name}')
         self.validate(db_manager)
+        schema = db_manager.get_table_schema(self.table_name)
+        return schema
 
 
 class CommandError(Exception):

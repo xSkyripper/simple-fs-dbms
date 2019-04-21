@@ -16,8 +16,14 @@ def sdb_shell(root_path):
         try:
             cmd = parser.parse(query)
             rv = cmd.execute(db_manager)
+            printable_rv = None
             if rv:
-                pprint(list(rv))
+                if isinstance(rv, dict):
+                    printable_rv = rv
+                else:
+                    printable_rv = list(rv)
+            if printable_rv:
+                pprint(printable_rv)
         except CommandError as ce:
             print(str(ce))
         except ValueError as ve:
