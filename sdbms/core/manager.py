@@ -187,7 +187,45 @@ class DbManager(object):
         # recursive lookup into each table
             # recursive lookup on each row
                 # recursive lookup on each column
-        
+        fd = open(csv_path,'w+')
+
+        for table_dir in os.listdir(self._db_path):
+        	current_table_path = os.path.join(self._db_path,table_dir)
+        	current_schema = self.get_table_schema(table_dir)
+
+        	fd.write(table_dir)                  # show schema
+        	for col_name,col_type in current_schema.items():
+        		fd.write(", "+col_name+":"+col_type)
+
+        	for row_dir in os.listdir(current_table_path):
+        		dir_path = os.path.join(current_table_path,row_dir)
+        		if os.path.isdir(dir_path):
+        			fd.write(table_dir + ", "+row_dir)
+        		path_to_dir = os.path.join(current_table_path,row_dir)
+        		if os.path.isdir(path_to_dir):
+        			for column in os.listdir(path_to_dir):
+        				fd.write(", "+ column.split('.')[0])
+        				with open(os.path.join(path_to_dir,column),'r') as fr:
+        					value = fr.read()
+        					fd.write(", "+value)
+        		fd.write("\n")
+        	fd.write("\n")
+        fd.close()
+        pass
+    
+    def from_csv(self, csv_path):
+        # parse csv
+        # recreate db
+        # recreate all tables
+        # recreate all schemas for each table
+        # recreate all rows for each table
+        # recreate all columns for each row
+        # note: tables are separated by empty new line
+        # note2: first row of table data is schema
+        pass
+
+
+
         # csv_path: something.csv
         """ input >>>
         mydb/
@@ -223,15 +261,3 @@ class DbManager(object):
         things, 0, title, <val>
         things, 0, price, <val>
         """
-        pass
-    
-    def from_csv(self, csv_path):
-        # parse csv
-        # recreate db
-        # recreate all tables
-        # recreate all schemas for each table
-        # recreate all rows for each table
-        # recreate all columns for each row
-        # note: tables are separated by empty new line
-        # note2: first row of table data is schema
-        pass
