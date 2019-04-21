@@ -195,69 +195,21 @@ class DbManager(object):
 
         	fd.write(table_dir)                  # show schema
         	for col_name,col_type in current_schema.items():
-        		fd.write(", "+col_name+":"+col_type)
+        		fd.write(f',{col_name}:{col_type}')
 
         	for row_dir in os.listdir(current_table_path):
-        		dir_path = os.path.join(current_table_path,row_dir)
-        		if os.path.isdir(dir_path):
-        			fd.write(table_dir + ", "+row_dir)
         		path_to_dir = os.path.join(current_table_path,row_dir)
         		if os.path.isdir(path_to_dir):
         			for column in os.listdir(path_to_dir):
-        				fd.write(", "+ column.split('.')[0])
+        				name_column = column.split('.')[0]
+        				fd.write(f'\n{table_dir},{row_dir},{name_column}')
         				with open(os.path.join(path_to_dir,column),'r') as fr:
         					value = fr.read()
-        					fd.write(", "+value)
-        		fd.write("\n")
-        	fd.write("\n")
+        					fd.write(f',{value}')
+        	fd.write("\n\n")
         fd.close()
         pass
     
     def from_csv(self, csv_path):
-        # parse csv
-        # recreate db
-        # recreate all tables
-        # recreate all schemas for each table
-        # recreate all rows for each table
-        # recreate all columns for each row
-        # note: tables are separated by empty new line
-        # note2: first row of table data is schema
-        pass
-
-
-
-        # csv_path: something.csv
-        """ input >>>
-        mydb/
-            users/
-                .schema
-                0/
-                    name.str
-                    age.int
-                1/
-                    name.str
-                    age.int
-                2/
-                    name.str
-                    age.int
-            things/
-                .schema
-                0/
-                    title.str
-                    price.int
-                1/
-                    title.str
-                    price.int
-        """
-
-        """ output <<<
-        users, str:name, int:age
-        users, 0, name, <val>
-        users, 0, age, <val>
-        users, 1, name, <val>
-        users, 1, age, <val>
-
-        things, str:title, int:price
-        things, 0, title, <val>
-        things, 0, price, <val>
-        """
+    	print("test")
+    	fd = open(csv_path,"r")
