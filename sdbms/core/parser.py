@@ -211,13 +211,14 @@ class FromCsvCmd(namedtuple('FromCsvCmd', 'csv_path')):
         print(f'execute args {self.csv_path}')
         self.validate(db_manager)
 
-class ToCsvCmd(namedtuple('ToCsvCmd', 'db_name, csv_path')):
+class ToCsvCmd(namedtuple('ToCsvCmd', 'csv_path')):
     def validate(self, db_manager):
         pass
 
     def execute(self, db_manager):
-        print(f'execute args {self.db_name} {self.csv_path}')
         self.validate(db_manager)
+        db_manager.to_csv(csv_path=self.csv_path)
+        
 
 class SchemaCmd(namedtuple('FromCsvCmd', 'table_name')):
     def validate(self, db_manager):
@@ -248,7 +249,7 @@ class QueryParser(object):
     re_table_update_rows = re.compile(r'^update\s+(?P<table_name>\w+)\s+set\s+(?P<setters>(((\w+)=(True|False|(\d+)|\"([A-Za-z0-9\/\<\>\:\`\~\.\,\?\!\@\;\'\#\$\%\^\&\*\-\_\+\=\[\{\]\}\\\|\(\)\ ])*?\"))\s?)+)(\s+where\s+op:(?P<op>or|and)\s+conditions\s+(?P<conditions>((\w+?)(=|!=|<|>|<=|>=)((\d+?)|(True|False)|\"([A-Za-z0-9\/\<\>\:\`\~\.\,\?\!\@\;\'\#\$\%\^\&\*\-\_\+\=\[\{\]\}\\\|\(\)\ ])*?\")(\s+)?)+))?;$')
     re_table_delete_rows = re.compile(r'^delete\s+in\s+(?P<table_name>\w+)(\s+where\s+op:(?P<op>or|and)\s+conditions\s+(?P<conditions>((\w+?)(=|!=|<|>|<=|>=)((\d+?)|(True|False)|\"([A-Za-z0-9\/\<\>\:\`\~\.\,\?\!\@\;\'\#\$\%\^\&\*\-\_\+\=\[\{\]\}\\\|\(\)\ ])*?\")(\s+)?)+))?;$')
     re_from_csv = re.compile(r'^from\s+csv\s+(?P<csv_path>[^ ]+?\.csv)\s*?;$')
-    re_to_csv = re.compile(r'^to\s+csv\s+(?P<db_name>\w+?)\s+(?P<csv_path>[^ ]+?\.csv)\s*?;$')
+    re_to_csv = re.compile(r'^to\s+csv\s+(?P<csv_path>[^ ]+?\.csv)\s*?;$')
     re_schema = re.compile(r'^schema\s+(?P<table_name>\w+)\s*?;$')
 
     def __init__(self):
@@ -410,26 +411,19 @@ class QueryParser(object):
         result = self.re_from_csv.fullmatch(query)
         if not result:
             return
-        
-        csv_path = result.group('csv_path')
 
-        return FromCsvCmd(csv_path=csv_path)
+        return FromCsvCmd(csv_path=result.group('csv_path'))
     
     def _parse_to_csv(self, query):
         result = self.re_to_csv.fullmatch(query)
         if not result:
             return
-        
-        db_name = result.group('db_name')
-        csv_path = result.group('csv_path')
  
-        return ToCsvCmd(db_name=db_name, csv_path=csv_path)
+        return ToCsvCmd(csv_path=result.group('csv_path'))
     
     def _parse_schema(self, query):
         result = self.re_schema.fullmatch(query)
         if not result:
             return
 
-        table_name = result.group('table_name')
-
-        return SchemaCmd(table_name=table_name)
+        return SchemaCmd(table_name=result.group('table_name'))
