@@ -46,7 +46,7 @@ class DbManager(object):
     with the extension being the type of the data contained
     
     """
-    def __init__(self, root_path):
+    def __init__(self, root_path=None):
         """
         :param str root_path: The root dir where the database will be managed
         """
