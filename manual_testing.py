@@ -6,6 +6,8 @@ test_queries = [
 
     """delete sdb my_db;""",
 
+    """ use sdb my_db;""",
+
     """create table users columns str:name int:age bool:isdead;""",
 
     """delete table users;""",
