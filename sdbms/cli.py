@@ -18,7 +18,7 @@ def sdb_shell(root_path):
             rv = cmd.execute(db_manager)
             printable_rv = None
             if rv:
-                if isinstance(rv, dict):
+                if isinstance(rv, dict) or isinstance(rv, str):
                     printable_rv = rv
                 else:
                     printable_rv = list(rv)

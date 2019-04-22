@@ -111,6 +111,14 @@ class DbManager(object):
         schema_path = os.path.join(table_path, SCHEMA)
         return self._get_schema(schema_path)
 
+    def get_current_db(self):
+        """ Returns current set database name
+
+        :return: current set database name
+        :rtype: str
+        """
+        return os.path.basename(self.db_path)
+
     def _row_dirs(self, table_path):
         """ Iterates over the row directories (abs path) of a table dir
 
@@ -308,6 +316,14 @@ class DbManager(object):
 
             with open(col_file, 'w') as fd:
                 fd.write(col_value)
+
+    def get_tables(self, db_name):
+        """ Returns tables from a database
+
+        :param str db_name: Name of the database
+        """
+        db_path = os.path.join(self.root_path, db_name)
+        yield from os.listdir(db_path)
     
     def to_csv(self, csv_path):
         # recursive lookup into each table
