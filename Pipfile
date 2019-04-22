@@ -12,6 +12,7 @@ jinja2 = "*"
 pylint = "*"
 ipython = "*"
 click = "*"
+sphinx-rtd-theme = "*"
 
 [requires]
 python_version = "3.7"
