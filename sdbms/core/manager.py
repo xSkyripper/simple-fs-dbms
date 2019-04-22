@@ -338,5 +338,40 @@ class DbManager(object):
         pass
     
     def from_csv(self, csv_path):
-    	print("test")
+    	db_dirname, _ = os.path.splitext(csv_path)
+    	self.create_db(db_dirname)
+    	self.use_db(db_dirname) 
+
+    	new_schema = True
+    	new_row = dict()
+    	current_table = ""
+    	current_row = -1
+
     	fd = open(csv_path,"r")
+    	for line in fd:
+    		if line == "\n":
+    			new_schema = True
+    			self.insert_row(current_table,new_row)
+    			current_row = -1
+    			new_row = dict()
+    		else:
+    			line = line.replace('\n','')
+    			if new_schema == True: 
+    				new_schema = False
+    				elements = line.split(',')
+    				current_table = elements[0]
+    				current_schema = dict()
+    				for i in range(1,len(elements)):
+    					column_name,column_type = elements[i].split(':')
+    					current_schema[column_name] = column_type
+    				self.create_table(current_table,current_schema) 
+    			else: 
+    				elements = line.split(',')
+    				if current_row != int(elements[1]):
+    					if new_row:
+    						self.insert_row(current_table,new_row)
+    					new_row = dict()
+    					current_row = int(elements[1])
+    				new_row[elements[2]] = elements[3]			
+
+    pass
