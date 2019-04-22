@@ -1,0 +1,45 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>SDBMS - Index</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="script" href="elements.js"/>
+    <script>
+        var counter = 1;
+        var dynamicInput = [];
+
+        function addInput() {
+            var newdiv = document.createElement('div');
+            newdiv.id = dynamicInput[counter];
+            newdiv.innerHTML = "Condition " + (counter + 1) + " <br><input type='text' name=myKeys[" + counter + "] placeholder='label'> <input type='text' name='myOperators[" + counter + "]' placeholder='operator'> <input type='text' name='myValues[" + counter + "]' placeholder ='value'> <input type='button' value='-' onClick='removeInput(" + counter + ");'>";
+            document.getElementById('formulario').appendChild(newdiv);
+            counter++;
+        }
+
+        function removeInput(id) {
+            var elem = document.getElementById(id);
+            return elem.parentNode.removeChild(elem);
+        }
+    </script>
+</head>
+
+<body>
+    <form method="POST" id="formulario" action="http://localhost:5000/deleteResult">
+            <p>*DbName <input type = "text" name = "DbName"  required/></p>
+            <p>*TableName <input type = "text" name = "TableName" required/></p>
+            <p>ConditionType <input type="text" name="conditionType"> </p>
+            <div id="dynamicInput[0]">
+               Condition 1<br><input type="text" name="myKeys[0]" placeholder="label">  <input type="text" name="myOperators[0]" placeholder="operator"> <input type="text" name="myValues[0]" placeholder="value">
+               <input type="button" value="+" onClick="addInput();">
+                <div class ="submit">
+                <input type="submit" value="Apasa">
+            </div>
+            </div>
+       </form>
+</body>
+
+</html>
