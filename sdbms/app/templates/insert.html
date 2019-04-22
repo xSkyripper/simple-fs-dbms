@@ -15,7 +15,7 @@
         function addInput() {
             var newdiv = document.createElement('div');
             newdiv.id = dynamicInput[counter];
-            newdiv.innerHTML = "Condition " + (counter + 1) + " <br><input type='text' name=myKeys[" + counter + "] placeholder='label'>  <input type='text' name='myValues[" + counter + "]' placeholder ='value'> <input type='button' value='-' onClick='removeInput(" + counter + ");'>";
+            newdiv.innerHTML = "Column and value " + (counter + 1) + " <br><input type='text' name=myKeys[" + counter + "] placeholder='label'>  <input type='text' name='myValues[" + counter + "]' placeholder ='value'> <input type='button' value='-' onClick='removeInput(" + counter + ");'>";
             document.getElementById('formulario').appendChild(newdiv);
             counter++;
         }
@@ -28,13 +28,13 @@
 </head>
 
 <body>
-<h1> Pajina de insert</h1>
+<h1>Insert page</h1>
 
 <form method="POST" id="formulario" action="http://localhost:5000/insertResult">
             <p>*DbName <input type = "text" name = "DbName"  required/></p>
             <p>*TableName <input type = "text" name = "TableName" required/></p>
             <div id="dynamicInput[0]">
-               Condition 1<br><input type="text" name="myKeys[0]" placeholder="label"> <input type="text" name="myValues[0]" placeholder="value">
+               Column and value 1<br><input type="text" name="myKeys[0]" placeholder="label"> <input type="text" name="myValues[0]" placeholder="value">
                <input type="button" value="+" onClick="addInput();">
                 <div class ="submit">
                 <input type="submit" value="Apasa">

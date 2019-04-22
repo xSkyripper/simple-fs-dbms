@@ -6,16 +6,22 @@ class QueryBuilder(object):
         table_name = args[0]['TableName']
         condition_type = args[0]['conditionType']
         counter = 1
+        labels = list()
         keys = list()
         operators = list()
         values = list()
+
         for element in args[0]:
-            if counter>=4:
-                if counter %3 == 1:
-                    keys.append(args[0][element])
+            if "myLabel" in element:
+                labels.append(args[0][element])
+
+        for element in args[0]:
+            if counter>4:
                 if counter %3 == 2:
-                    operators.append(args[0][element])
+                    keys.append(args[0][element])
                 if counter %3 == 0:
+                    operators.append(args[0][element])
+                if counter %3 == 1:
                     try:
                         value = int(args[0][element])
                     except ValueError:
@@ -25,7 +31,15 @@ class QueryBuilder(object):
                             value = "\"" + args[0][element] + "\""
                     values.append(str(value))
             counter+=1
-        query = "query * " + table_name
+        while '' in labels:
+            labels.remove('')
+        if len(labels)>0:
+            query = "query "
+            for i in range(len(labels)):
+                query+= labels[i]+ " "
+            query+= " "+ table_name
+        else:
+            query = "query * " + table_name
         if len(condition_type) >0:
             query+= " where op:"+condition_type+" conditions"
             for i in range(len(keys)):
