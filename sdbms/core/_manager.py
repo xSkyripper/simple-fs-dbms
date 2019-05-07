@@ -263,7 +263,7 @@ class DbManager(object):
         This function also adds '_rowid' to the record which is
         the unique integer which identifies the row dir.
         Example of a yielded record:
-            ``{'_rowid': 1, 'name': 'a', age: 1}``
+        ``{'_rowid': 1, 'name': 'a', age: 1}``
 
         :param str table: Name of the table
         :return: record of a table

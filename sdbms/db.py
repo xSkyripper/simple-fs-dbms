@@ -37,10 +37,45 @@ class SimpleDb(object):
 
         create table users columns str:name int:age bool:employeed;
 
-    2. Query a table (with projection)::
+    2. Query a table::
 
+        query * users;
 
+    3. Query a table (with projection)::
 
+        query name,age users;
+
+    4. Query a table (with 1 condition)::
+
+        query name users where op:or conditions age>18;
+
+    5. Query a table (with multiple conditions)::
+
+        query name users where op:or conditions age>18 isdead!=True;
+
+    **Table update queries**:
+
+    1. Update columns (single)::
+
+        update users set name="John";
+
+    2. Update columns (multiple)::
+
+        update users set name="John" isdead=False;
+
+    3. Update columns (with conditions)::
+
+        update users set isdead=True where op:and conditions isdead=False name="John";
+
+    **Table delete queries**:
+
+    1. Delete rows (all)::
+
+        delete in users;
+
+    2. Delete rows (by conditions)::
+
+        delete in users where op:or conditions isdead=True;
 
     """
     def __init__(self, db_root_path=None):
