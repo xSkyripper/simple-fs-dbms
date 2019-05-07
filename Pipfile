@@ -14,6 +14,8 @@ ipython = "*"
 click = "*"
 sphinx-rtd-theme = "*"
 sphinx = "*"
+pytest = "*"
+pytest-cov = "*"
 
 [requires]
 python_version = "3.7"
