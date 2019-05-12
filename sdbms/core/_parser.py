@@ -25,7 +25,7 @@ class Literal(namedtuple('Literal', 'value')):
         except Exception:
             pass
         
-        return value
+        raise ValueError(f'Paramater {value} is not valid')
 
     def __new__(cls, value):
         evaled_value = cls.eval_value(value)
@@ -49,11 +49,15 @@ class Comparison(namedtuple('Comparison', 'left, op, right')):
             left = Literal(row[self.left.name]).value
         elif type(self.left) is Literal:
             left = self.left.value
+        else:
+            raise ValueError(f'Invalid left value type; {self.left}')
 
         if type(self.right) is Column:
             right = Literal(row[self.right.name]).value
-        else:
+        elif type(self.right) is Literal:
             right = self.right.value
+        else:
+            raise ValueError(f'Invalid right value type; {self.left}')
 
         return self.ops[self.op](left, right)
 
@@ -272,13 +276,15 @@ class QueryParser(object):
 
     def __init__(self):
         pass
+
+    def _get_parse_methods(self):
+        for meth_name in dir(self.__class__):
+            meth = getattr(self.__class__, meth_name)
+            if meth_name.startswith('_parse') and callable(meth):
+                yield meth 
     
     def parse(self, query):
-        parse_methods = [getattr(self.__class__, meth)
-                         for meth in dir(self.__class__)
-                            if callable(getattr(self.__class__, meth))
-                            and meth.startswith('_parse')]
-        for meth in parse_methods:
+        for meth in self._get_parse_methods():
             rv = meth(self, query)
             if rv is not None:
                 return rv
