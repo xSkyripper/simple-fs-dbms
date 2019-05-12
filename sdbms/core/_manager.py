@@ -8,46 +8,45 @@ class DbManager(object):
     """ Low-level database management class
 
     This class manages databases and the data contained by them
-    The general structure of a database is:
-    \b
-    my_database/
-        users/
-            .schema
-            0/
-                name.str
-                age.int
-                employed.bool
-            1/
-                name.str
-                age.int
-                employed.bool
-            ...
-        things/
-            .schema
-            0/
-                title.str
-                price.int
-            1/
-                title.str
-                price.int
-            ...
-    \b
-    1. Each database entity is a dir;
+    The general structure of a database is::
+
+        my_database/
+            users/
+                .schema
+                0/
+                    name.str
+                    age.int
+                    employed.bool
+                1/
+                    name.str
+                    age.int
+                    employed.bool
+            things/
+                .schema
+                0/
+                    title.str
+                    price.int
+                1/
+                    title.str
+                    price.int
+
+    1. Each database entity is a dir
+
     2. Each table entity is a dir with a '.schema' file containing
-    the schema of the table; data from schema looks like:
-    \b
-    ===== .schema =====
-    name, str
-    age, int
-    employed, bool
-    ===================
+    the schema of the table; data from schema looks like::
+
+        # .schema
+        name, str
+        age, int
+        employed, bool
 
     3. Each row is an autoincremented named dir from 0 to n
+
     4. Each value for a cell is saved in a plaintext column file
     with the extension being the type of the data contained
     
     """
-    def __init__(self, root_path):
+    def __init__(self, root_path=None):
         """
         :param str root_path: The root dir where the database will be managed
         """
@@ -60,7 +59,7 @@ class DbManager(object):
     def db_path(self):
         """ Returns path set for the current database
 
-        :raises AttributesError if _db_path is None (i.e. has not been set)
+        :raises AttributesError: if _db_path is None (i.e. has not been set)
         :return: current database path
         :rtype: str
         """
@@ -78,7 +77,7 @@ class DbManager(object):
             }
 
         :param str schema_path: Path to the schema file
-        :param dict[str, str] schema: Key-value schema
+        :param dict[str,str] schema: Key-value schema
         """
         with open(schema_path, 'w') as fd:
             for col_name, col_type in schema.items():
@@ -88,8 +87,8 @@ class DbManager(object):
         """ Gets schema from the specified path
 
         :param str schema_path: Path to the schema file
-        :return: schema key-value maps [column_name, column_type]
-        :rtype: dict[str, str]
+        :return: schema key-value maps `[column_name, column_type]`
+        :rtype: dict[str,str]
         """
         schema = {}
         with open(schema_path) as fd:
@@ -105,12 +104,20 @@ class DbManager(object):
         """ Gets schema for a table identified by name
         
         :param str table_name: Name of the table
-        :return: schema key-value maps [column_name, column_type]
-        :rtype: dict[str, str]
+        :return: schema key-value maps `[column_name, column_type]`
+        :rtype: dict[str,str]
         """
         table_path = os.path.join(self.db_path, table_name)
         schema_path = os.path.join(table_path, SCHEMA)
         return self._get_schema(schema_path)
+
+    def get_current_db(self):
+        """ Returns current set database name
+
+        :return: current set database name
+        :rtype: str
+        """
+        return os.path.basename(self.db_path)
 
     def _row_dirs(self, table_path):
         """ Iterates over the row directories (abs path) of a table dir
@@ -136,7 +143,7 @@ class DbManager(object):
         """ Sets a database identified by name as 'current'
 
         :param str name: Name of the database
-        :raises ValueError if the database dir does not exist
+        :raises ValueError: if the database dir does not exist
         """
         path = os.path.join(self.root_path, name)
         if not os.path.exists(path) or not os.path.isdir(path):
@@ -157,7 +164,7 @@ class DbManager(object):
         """ Creates a table dir identified by name and its related .schema file
 
         :param str name: Name of the table
-        :param dict[str, str] schema: Key-value schema [column_name, column_type]
+        :param dict[str, str] schema: Key-value schema `[column_name, column_type]`
         """
         table_path = os.path.join(self.db_path, name)
         os.mkdir(table_path)
@@ -177,7 +184,7 @@ class DbManager(object):
         """ Adds a column to the table identified by name
 
         This function modifies the schema adding the new column and its type
-        It also creates empty files named '<col_name>.<col_type>'
+        It also creates empty files named `<col_name>.<col_type>`
         for each row dirs of the table
 
         :param str name: Name of the table
@@ -200,7 +207,7 @@ class DbManager(object):
         """ Deletes a columns from the table identified by name
 
         This functions modifies the schema deleting the column
-        It also deletes the column types named '<col_name>.<col_type>'
+        It also deletes the column types named `<col_name>.<col_type>`
         for each row dirs of the table
 
         :param str name: Name of the table
@@ -224,12 +231,13 @@ class DbManager(object):
 
         This function autoincrements the rowid or defaults to 0
         when inserting a new row;
-        Upon inserting a new row, each column file named '<col_name>.<col_type>'
+        Upon inserting a new row, each column file named `<col_name>.<col_type>`
         is created and the data from the row dict is added for each column
 
         :param str table: Name of the table
-        :param dict[str, str] row: Row to be inserted
+        :param dict[str,str] row: Row to be inserted
         """
+        row = row.copy()
         table_path = os.path.join(self.db_path, table)
         schema_path = os.path.join(table_path, SCHEMA)
         schema = self._get_schema(schema_path)
@@ -253,10 +261,9 @@ class DbManager(object):
         """ Iterates over all the records of a table
 
         This function also adds '_rowid' to the record which is
-        the unique integer which identifies the row dir
-
-        Examples of a yielded record:
-            {'_rowid': 1, 'name': 'a', age: 1},
+        the unique integer which identifies the row dir.
+        Example of a yielded record:
+        ``{'_rowid': 1, 'name': 'a', age: 1}``
 
         :param str table: Name of the table
         :return: record of a table
@@ -294,7 +301,7 @@ class DbManager(object):
         
         :param str table: Name of the table
         :param str|int rowid: Unique identifier of the row dir (record)
-        :param dict[str, str] new_row: The new row data
+        :param dict[str,str] new_row: The new row data
         """
         table_path = os.path.join(self.db_path, table)
         schema_path = os.path.join(table_path, SCHEMA)
@@ -309,6 +316,14 @@ class DbManager(object):
 
             with open(col_file, 'w') as fd:
                 fd.write(col_value)
+
+    def get_tables(self, db_name):
+        """ Returns tables from a database
+
+        :param str db_name: Name of the database
+        """
+        db_path = os.path.join(self.root_path, db_name)
+        yield from os.listdir(db_path)
     
     def to_csv(self, csv_path):
         # recursive lookup into each table

@@ -1,24 +1,23 @@
 import sys
 
-from sdbms.core.manager import DbManager
-from sdbms.core.parser import QueryParser, CommandError
+from sdbms.core import CommandError
+from sdbms.db import SimpleDb
 from pprint import pprint
 
 def sdb_shell(root_path):
     print('simple-fs-dbms interactive shell!\n')
-    db_manager = DbManager(root_path)
-    parser = QueryParser()
+
+    sdb = SimpleDb()
 
     while True:
         query = input('> ')
         query = query.strip()
 
         try:
-            cmd = parser.parse(query)
-            rv = cmd.execute(db_manager)
+            rv = sdb.execute(query)
             printable_rv = None
             if rv:
-                if isinstance(rv, dict):
+                if isinstance(rv, dict) or isinstance(rv, str):
                     printable_rv = rv
                 else:
                     printable_rv = list(rv)

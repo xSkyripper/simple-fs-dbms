@@ -229,6 +229,22 @@ class SchemaCmd(namedtuple('FromCsvCmd', 'table_name')):
         schema = db_manager.get_table_schema(self.table_name)
         return schema
 
+class TablesCmd(namedtuple('TablesCmd', 'db_name')):
+    def validate(self, db_manager):
+        pass
+    
+    def execute(self, db_manager):
+        self.validate(db_manager)
+        yield from db_manager.get_tables(db_name=self.db_name)
+
+class DbCmd(namedtuple('DbCmd', '')):
+    def validate(self, db_manager):
+        pass
+    
+    def execute(self, db_manager):
+        self.validate(db_manager)
+        return db_manager.get_current_db()
+
 
 class CommandError(Exception):
     """ Generic command error """
@@ -251,6 +267,8 @@ class QueryParser(object):
     re_from_csv = re.compile(r'^from\s+csv\s+(?P<csv_path>[^ ]+?\.csv)\s*?;$')
     re_to_csv = re.compile(r'^to\s+csv\s+(?P<csv_path>[^ ]+?\.csv)\s*?;$')
     re_schema = re.compile(r'^schema\s+(?P<table_name>\w+)\s*?;$')
+    re_tables = re.compile(r'^tables\s+(?P<db_name>\w+)\s*?;$')
+    re_db = re.compile(r'^db\s*?;$')
 
     def __init__(self):
         pass
@@ -260,10 +278,9 @@ class QueryParser(object):
                          for meth in dir(self.__class__)
                             if callable(getattr(self.__class__, meth))
                             and meth.startswith('_parse')]
-
         for meth in parse_methods:
             rv = meth(self, query)
-            if rv:
+            if rv is not None:
                 return rv
 
         raise CommandError('No command matches; fix or retry (another) query')
@@ -406,6 +423,20 @@ class QueryParser(object):
                             for left, op, right, _, _, _ in result_conditions])
         
         return DeleteCmd(table=name, conditions_list=conditions)
+
+    def _parse_tables(self, query):
+        result = self.re_tables.fullmatch(query)
+        if not result:
+            return
+
+        return TablesCmd(db_name=result.group('db_name'))
+
+    def _parse_db(self, query):
+        result = self.re_db.fullmatch(query)
+        if not result:
+            return
+
+        return DbCmd()
 
     def _parse_from_csv(self, query):
         result = self.re_from_csv.fullmatch(query)
