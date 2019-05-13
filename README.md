@@ -1,6 +1,40 @@
 # simple-fs-dbms
 Simple FileSystem DBMS
 
+## Usage
+#### Requirements:
+* `Python 3.7.*`
+* `pip` for Python3
+
+Setup:
+```bash
+pip install -g pipenv
+git clone https://github.com/xSkyripper/simple-fs-dbms
+cd simple-fs-dbms
+
+pipenv install
+pipenv shell
+```
+
+Run sdbms CLI:
+```bash
+pipenv shell
+python -m sdbms.cli
+```
+
+Run webserver:
+```bash
+pipenv shell
+python run.py
+```
+
+Run tests:
+```bash
+pipenv shell
+python -m pytest --cov-report html --cov-report term --cov=sdbms tests/
+```
+
+
 ## Design & Architecture
 ### Specifications
 * Definition of a file format for storing the tables. There are no constraints about the file format (text, XML, fixed- or variable-length fields etc.).
