@@ -1,10 +1,10 @@
-from sdbms.core import QueryParser
+from sdbms.core import QueryParser, DbManager
 from sdbms.core._parser import *
 
 import pytest
-import mock
+import unittest.mock
 
-
+############################### Grammar tests ###############################
 @pytest.mark.parametrize(
     'input, output',
     [
@@ -178,6 +178,32 @@ def test_condition_list_op_not_okay():
         condition_list = ConditionList('xor', [])
         condition_list.match({'foo': '1'})
 
+
+############################### Cmds tests ###############################
+
+@pytest.fixture
+def mock_dbmanager():
+    mock_dbmanager_cls = unittest.mock.create_autospec(DbManager, spec_set=True)
+    return mock_dbmanager_cls()
+
+@pytest.mark.parametrize(
+    'cmd_class, kwargs, dbm_method',
+    [
+        (CreateDbCmd, {'name': 'foo'}, 'create_db'),
+        (UseDbCmd, {'name': 'foo'}, 'use_db'),
+        (DeleteDbCmd, {'name': 'foo'}, 'delete_db'),
+        (DeleteTableCmd, {'name': 'foo'}, 'delete_table'),
+        (FromCsvCmd, {'csv_path': './foo/baz/bar.csv'}, 'from_csv'),
+        (ToCsvCmd, {'csv_path': './foo/baz/bar.csv'}, 'to_csv')
+    ]
+)
+def test_simple_cmds(mock_dbmanager, cmd_class, kwargs, dbm_method):
+    cmd = cmd_class(**kwargs)
+    cmd.execute(mock_dbmanager)
+    getattr(mock_dbmanager, dbm_method).assert_called_once_with(**kwargs)
+
+
+############################## QueryParser tests ##############################
 
 def test_get_parse_methods():
     qp = QueryParser()

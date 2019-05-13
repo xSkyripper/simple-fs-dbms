@@ -208,21 +208,12 @@ class UpdateCmd(namedtuple('UpdateCmd', 'table, values, conditions_list')):
                                       rowid=row['_rowid'], new_row=self.values)
 
 class FromCsvCmd(namedtuple('FromCsvCmd', 'csv_path')):
-    def validate(self, db_manager):
-        pass
-
     def execute(self, db_manager):
-        print(f'execute args {self.csv_path}')
-        self.validate(db_manager)
+        db_manager.from_csv(csv_path=self.csv_path)
 
 class ToCsvCmd(namedtuple('ToCsvCmd', 'csv_path')):
-    def validate(self, db_manager):
-        pass
-
     def execute(self, db_manager):
-        self.validate(db_manager)
         db_manager.to_csv(csv_path=self.csv_path)
-        
 
 class SchemaCmd(namedtuple('FromCsvCmd', 'table_name')):
     def validate(self, db_manager):
@@ -247,7 +238,8 @@ class DbCmd(namedtuple('DbCmd', '')):
     
     def execute(self, db_manager):
         self.validate(db_manager)
-        return db_manager.get_current_db()
+        current_db = db_manager.get_current_db()
+        return current_db
 
 
 class CommandError(Exception):
