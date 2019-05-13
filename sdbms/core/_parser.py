@@ -86,8 +86,6 @@ class DeleteDbCmd(namedtuple('DeleteDbCmd', 'name')):
 
 class CreateTableCmd(namedtuple('CreateTableCmd', 'name, schema')):
     def validate(self):
-        if len(set(self.schema)) != len(self.schema):
-            raise CommandError('Cannot have duplicate columns in table schema')
         if set(self.schema.values()) - SCHEMA_TYPES:
             raise CommandError(f'Only schema accepted types are {SCHEMA_TYPES}')
 
