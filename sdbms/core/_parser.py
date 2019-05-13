@@ -214,20 +214,12 @@ class ToCsvCmd(namedtuple('ToCsvCmd', 'csv_path')):
         db_manager.to_csv(csv_path=self.csv_path)
 
 class SchemaCmd(namedtuple('FromCsvCmd', 'table_name')):
-    def validate(self, db_manager):
-        pass
-
     def execute(self, db_manager):
-        self.validate(db_manager)
         schema = db_manager.get_table_schema(self.table_name)
         return schema
 
 class TablesCmd(namedtuple('TablesCmd', 'db_name')):
-    def validate(self, db_manager):
-        pass
-    
     def execute(self, db_manager):
-        self.validate(db_manager)
         yield from db_manager.get_tables(db_name=self.db_name)
 
 class DbCmd(namedtuple('DbCmd', '')):
@@ -242,6 +234,8 @@ class DbCmd(namedtuple('DbCmd', '')):
 
 class CommandError(Exception):
     """ Generic command error """
+    def __init__(self, message):
+        super(CommandError, self).__init__(message)
 
 class QueryParser(object):
     re_db_create = re.compile(r'^create\s+sdb\s+(?P<name>\w+);$')
