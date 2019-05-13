@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request
 from sdbms.app.service.builder import QueryBuilder
-from sdbms.core.manager import DbManager
-from sdbms.core.parser import QueryParser, CommandError
+from sdbms.core._manager import DbManager
+from sdbms.core._parser import QueryParser, CommandError
 
 root_path = "/Users/cernescustefan/Documents/Facultate/db"
 
@@ -37,6 +37,7 @@ def result():
         queryBuilder = QueryBuilder()
         set_db = queryBuilder.use_db(result)
         query = queryBuilder.build_select(result)
+        print(result)
         db_manager = DbManager(root_path)
         parser = QueryParser()
         cmd = parser.parse(set_db)
@@ -54,6 +55,7 @@ def insertResult():
         queryBuilder = QueryBuilder()
         set_db = queryBuilder.use_db(result)
         query = queryBuilder.build_insert(result)
+        print(result)
         db_manager = DbManager(root_path)
         parser = QueryParser()
         cmd = parser.parse(set_db)
@@ -71,6 +73,7 @@ def deleteResult():
         queryBuilder = QueryBuilder()
         set_db = queryBuilder.use_db(result)
         query = queryBuilder.build_delete(result)
+        print(result)
         db_manager = DbManager(root_path)
         parser = QueryParser()
         cmd = parser.parse(set_db)
@@ -86,6 +89,7 @@ def updateResult():
         result = request.form
         queryBuilder = QueryBuilder()
         set_db = queryBuilder.use_db(result)
+        print(result)
         query = queryBuilder.build_update(result)
         db_manager = DbManager(root_path)
         parser = QueryParser()

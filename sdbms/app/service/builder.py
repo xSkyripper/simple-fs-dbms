@@ -45,6 +45,7 @@ class QueryBuilder(object):
             for i in range(len(keys)):
                 query+= " "+keys[i] + operators[i] + values[i]
         query+= ";"
+        print(query)
         return query
 
     def build_insert(self,*args):
@@ -70,6 +71,7 @@ class QueryBuilder(object):
         for i in range(len(keys)):
             query += " " + keys[i] + "=" + values[i]
         query += ";"
+        print(query)
         return query
 
     def build_delete(self, *args):
@@ -101,6 +103,7 @@ class QueryBuilder(object):
             for i in range(len(keys)):
                 query += " " + keys[i] + operators[i] + values[i]
         query += ";"
+        print(query)
         return query
 
     def build_update(self, *args):
@@ -151,9 +154,11 @@ class QueryBuilder(object):
             for i in range(len(keys)):
                 query+= " "+keys[i] + operators[i] + values[i]
         query+= ";"
+        print(query)
         return query
 
     def use_db(self, *args):
         database_name = args[0]['DbName']
         query = "use sdb " + database_name +";"
+        print(query)
         return query
