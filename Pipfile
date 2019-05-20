@@ -17,6 +17,7 @@ sphinx = "*"
 pytest = "*"
 pytest-cov = "*"
 mock = "*"
+requests = "*"
 
 [requires]
 python_version = "3.7"

@@ -3,6 +3,8 @@ from sdbms.core._parser import *
 
 import pytest
 import unittest.mock
+import random
+import string
 
 ############################### Grammar tests ###############################
 @pytest.mark.parametrize(
@@ -40,10 +42,13 @@ def test_literal_num_exception():
         _ = Literal(123)
         assert 'Parameter 123 must be a str' == str(ex)
 
-def test_literal_gibberish_exception():
+@pytest.mark.parametrize(
+    'input_gibberish',
+    [(''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10)),),] * 10)
+def test_literal_gibberish_exception(input_gibberish):
     with pytest.raises(ValueError) as ex:
-        _ = Literal('foo')
-        assert 'Parameter foo is not valid' == str(ex)
+        _ = Literal(input_gibberish)
+        assert f'Parameter {input_gibberish} is not valid' == str(ex)
 
 
 @pytest.mark.parametrize(
@@ -202,7 +207,62 @@ def test_simple_cmds(mock_dbmanager, cmd_class, kwargs, dbm_method):
     cmd.execute(mock_dbmanager)
     getattr(mock_dbmanager, dbm_method).assert_called_once_with(**kwargs)
 
+def test_create_table_cmd_okay(mock_dbmanager):
+    input_kwargs = {'name': 'test',
+                    'schema': {'foo': 'str', 'baz': 'int', 'bar': 'bool'}}
+    cmd = CreateTableCmd(**input_kwargs)
+    cmd.execute(mock_dbmanager)
+    mock_dbmanager.create_table.assert_called_once_with(**input_kwargs)
 
+def test_create_table_cmd_not_okay(mock_dbmanager):
+    input_kwargs = {'name': 'test',
+                    'schema': {'foo': 'str', 'baz': '123', 'bar': 'bool'}}
+    cmd = CreateTableCmd(**input_kwargs)
+    with pytest.raises(CommandError) as ex:
+        cmd.execute(mock_dbmanager)
+        assert 'Only schema accepted types' in str(ex)
+
+def test_add_columns_cmd_okay(mock_dbmanager):
+    input_kwargs = {'name': 'test', 'col_type': 'str', 'col_name': 'foo'}
+    cmd = AddColumnCmd(**input_kwargs)
+    cmd.execute(mock_dbmanager)
+    mock_dbmanager.add_column.assert_called_once_with(**input_kwargs)
+
+def test_add_columns_cmd_column_existing(mock_dbmanager):
+    input_kwargs = {'name': 'test', 'col_type': 'str', 'col_name': 'foo'}
+    cmd = AddColumnCmd(**input_kwargs)
+    mock_dbmanager.get_table_schema.return_value = {'foo': 'str'}
+    with pytest.raises(CommandError) as ex:
+        cmd.execute(mock_dbmanager)
+        assert 'foo col is already existing' == str(ex)
+
+def test_add_columns_cmd_col_type_invalid(mock_dbmanager):
+    input_kwargs = {'name': 'test', 'col_type': '123', 'col_name': 'foo'}
+    cmd = AddColumnCmd(**input_kwargs)
+    with pytest.raises(CommandError) as ex:
+        cmd.execute(mock_dbmanager)
+        assert 'Only schema accepted' in str(ex)
+
+def test_del_column_cmd_okay(mock_dbmanager):
+    input_kwargs = {'name': 'test', 'col_name': 'foo'}
+    cmd = DelColumnCmd(**input_kwargs)
+    mock_dbmanager.get_table_schema.return_value = {'foo': 'str'}
+    cmd.execute(mock_dbmanager)
+    mock_dbmanager.del_column.assert_called_once_with(**input_kwargs)
+
+def test_del_column_cmd_not_existing(mock_dbmanager):
+    input_kwargs = {'name': 'test', 'col_name': 'foo'}
+    cmd = DelColumnCmd(**input_kwargs)
+    mock_dbmanager.get_table_schema.return_value = {'baz': 'str'}
+    with pytest.raises(CommandError) as ex:
+        cmd.execute(mock_dbmanager)
+        assert 'Col foo does not exist' == str(ex)
+
+def test_schema_cmd_okay(mock_dbmanager):
+    input_kwargs = {'table_name': 'test'}
+    cmd = SchemaCmd(**input_kwargs)
+    cmd.execute(mock_dbmanager)
+    mock_dbmanager.get_table_schema.assert_called_once_with(**input_kwargs)
 ############################## QueryParser tests ##############################
 
 def test_get_parse_methods():
