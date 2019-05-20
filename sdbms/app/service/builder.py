@@ -10,6 +10,8 @@ class QueryBuilder(object):
         keys = list()
         operators = list()
         values = list()
+        assert isinstance(condition_type, str)
+        assert isinstance(table_name, str)
         assert(table_name)
         for element in args[0]:
             if "myLabel" in element:
@@ -119,7 +121,9 @@ class QueryBuilder(object):
         operators = list()
         values = list()
         counter = 1
-        assert (table_name)
+        assert table_name
+        assert isinstance(condition_type, str)
+        assert isinstance(table_name, str)
         for element in args[0]:
             if "myLabel" in element:
                 if counter % 2 == 1:
@@ -167,6 +171,6 @@ class QueryBuilder(object):
         database_name = args[0]['DbName']
         query = "use sdb " + database_name +";"
         print(query)
-        assert(database_name)
-        assert (query)
+        assert isinstance(database_name, str)
+        assert query
         return query
