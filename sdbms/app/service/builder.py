@@ -47,6 +47,8 @@ class QueryBuilder(object):
             for i in range(len(keys)):
                 query+= " "+keys[i] + operators[i] + values[i]
         query+= ";"
+
+        assert query.__contains__("query")
         print(query)
         return query
 

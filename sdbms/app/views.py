@@ -56,6 +56,7 @@ def insertResult():
         set_db = queryBuilder.use_db(result)
         query = queryBuilder.build_insert(result)
         print(result)
+        assert result
         db_manager = DbManager(root_path)
         parser = QueryParser()
         cmd = parser.parse(set_db)
@@ -74,6 +75,7 @@ def deleteResult():
         set_db = queryBuilder.use_db(result)
         query = queryBuilder.build_delete(result)
         print(result)
+        assert result
         db_manager = DbManager(root_path)
         parser = QueryParser()
         cmd = parser.parse(set_db)
@@ -90,6 +92,7 @@ def updateResult():
         queryBuilder = QueryBuilder()
         set_db = queryBuilder.use_db(result)
         print(result)
+        assert result
         query = queryBuilder.build_update(result)
         db_manager = DbManager(root_path)
         parser = QueryParser()
