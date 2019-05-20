@@ -79,9 +79,13 @@ class DbManager(object):
         :param str schema_path: Path to the schema file
         :param dict[str,str] schema: Key-value schema
         """
+        assert bool(schema) #precondition  check if schema is not empty
+
         with open(schema_path, 'w') as fd:
             for col_name, col_type in schema.items():
                 fd.write(f'{col_name},{col_type}\n')
+
+        assert os.path.isfile(schema_path) #postcondition check if we created a file
 
     def _get_schema(self, schema_path):
         """ Gets schema from the specified path
@@ -90,6 +94,7 @@ class DbManager(object):
         :return: schema key-value maps `[column_name, column_type]`
         :rtype: dict[str,str]
         """
+        assert os.path.isfile(schema_path) #precondition check if the file exists
         schema = {}
         with open(schema_path) as fd:
             cols = fd.read().split('\n')
@@ -98,6 +103,8 @@ class DbManager(object):
             if col != '':
                 col_name, col_type = col.split(',')
                 schema[col_name] = col_type
+
+        assert schema #precondition  check if schema is not empty
         return schema
 
     def get_table_schema(self, table_name):
@@ -107,6 +114,8 @@ class DbManager(object):
         :return: schema key-value maps `[column_name, column_type]`
         :rtype: dict[str,str]
         """
+        assert table_name
+
         table_path = os.path.join(self.db_path, table_name)
         schema_path = os.path.join(table_path, SCHEMA)
         return self._get_schema(schema_path)
@@ -136,6 +145,7 @@ class DbManager(object):
 
         :param str name: Name of the database
         """
+        assert name
         path = os.path.join(self.root_path, name)
         os.mkdir(path)
 
@@ -145,6 +155,8 @@ class DbManager(object):
         :param str name: Name of the database
         :raises ValueError: if the database dir does not exist
         """
+        assert name
+
         path = os.path.join(self.root_path, name)
         if not os.path.exists(path) or not os.path.isdir(path):
             raise ValueError(f'SDB {name}/ does not exist or is not a dir!')
@@ -157,6 +169,7 @@ class DbManager(object):
 
         :param str name: Name of the database
         """
+        assert name
         path = os.path.join(self.root_path, name)
         shutil.rmtree(path)
 
@@ -166,19 +179,27 @@ class DbManager(object):
         :param str name: Name of the table
         :param dict[str, str] schema: Key-value schema `[column_name, column_type]`
         """
+        assert name
+        assert schema 
+
         table_path = os.path.join(self.db_path, name)
         os.mkdir(table_path)
 
         schema_path = os.path.join(table_path, SCHEMA)
         self._put_schema(schema_path, schema)
 
+        assert os.path.isdir(table_path)
+        assert os.path.isfile(schema_path)
+
     def delete_table(self, name):
         """ Deletes a table dir identified by name (and all its contents)
 
         :param str name: Name of the table
         """
+        assert name
         table_path = os.path.join(self.db_path, name)
         shutil.rmtree(table_path)
+        assert not os.path.exists(table_path)
 
     def add_column(self, name, col_name, col_type):
         """ Adds a column to the table identified by name
@@ -191,6 +212,10 @@ class DbManager(object):
         :param str col_name: Name of the column to be added
         :param str col_type: Type of the column to be added
         """
+        assert name
+        assert col_name
+        assert col_type
+
         table_path = os.path.join(self.db_path, name)
         schema_path = os.path.join(table_path, SCHEMA)
 
@@ -202,6 +227,8 @@ class DbManager(object):
         for row_dir in self._row_dirs(table_path):
             col_file = os.path.join(row_dir, col_filename)
             open(col_file, 'w').close()
+            assert os.path.exists(col_file)
+
 
     def del_column(self, name, col_name):
         """ Deletes a columns from the table identified by name
@@ -213,6 +240,9 @@ class DbManager(object):
         :param str name: Name of the table
         :param str col_name: Name of the column
         """
+        assert name
+        assert col_name
+
         table_path = os.path.join(self.db_path, name)
         schema_path = os.path.join(table_path, SCHEMA)
         schema = self._get_schema(schema_path)
@@ -222,9 +252,11 @@ class DbManager(object):
         for row_dir in self._row_dirs(table_path):
             col_file = os.path.join(row_dir, col_filename)
             os.remove(col_file)
+            assert not os.path.exists(col_file)
 
         del schema[col_name]
         self._put_schema(schema_path, schema)
+        assert os.path.isfile(schema_path)
 
     def insert_row(self, table, row={}):
         """ Inserts a row into the table identified by name
@@ -237,6 +269,9 @@ class DbManager(object):
         :param str table: Name of the table
         :param dict[str,str] row: Row to be inserted
         """
+        assert table
+        assert row
+
         row = row.copy()
         table_path = os.path.join(self.db_path, table)
         schema_path = os.path.join(table_path, SCHEMA)
@@ -257,6 +292,8 @@ class DbManager(object):
             with open(col_file, 'w') as fd:
                 fd.write(row[col_name])
 
+        assert os.path.isdir(new_row_dir)
+
     def scan_rows(self, table):
         """ Iterates over all the records of a table
 
@@ -269,6 +306,8 @@ class DbManager(object):
         :return: record of a table
         :rtype: Iterator[dict[str, str]]
         """
+        assert table
+
         table_path = os.path.join(self.db_path, table)
         schema_path = os.path.join(table_path, SCHEMA)
         current_schema = self._get_schema(schema_path)
@@ -291,10 +330,13 @@ class DbManager(object):
         :param str table: Name of the table
         :param str|int rowid: Unique identifier of the row dir (record)
         """
+        assert table
+
         table_path = os.path.join(self.db_path, table)
         row_dir = os.path.join(table_path, str(rowid))
 
         shutil.rmtree(row_dir)
+        assert not os.path.exists(row_dir)
 
     def update_row(self, table, rowid, new_row={}):
         """ Updates a row - identified by its row id - in a table
@@ -303,6 +345,9 @@ class DbManager(object):
         :param str|int rowid: Unique identifier of the row dir (record)
         :param dict[str,str] new_row: The new row data
         """
+        assert table
+        assert bool
+
         table_path = os.path.join(self.db_path, table)
         schema_path = os.path.join(table_path, SCHEMA)
         schema = self._get_schema(schema_path)
@@ -317,11 +362,14 @@ class DbManager(object):
             with open(col_file, 'w') as fd:
                 fd.write(col_value)
 
+        assert os.path.isfile(col_file)
+
     def get_tables(self, db_name):
         """ Returns tables from a database
 
         :param str db_name: Name of the database
         """
+        assert db_name
         db_path = os.path.join(self.root_path, db_name)
         yield from os.listdir(db_path)
     
@@ -350,12 +398,15 @@ class DbManager(object):
         					fd.write(f',{value}')
         	fd.write("\n\n")
         fd.close()
-        pass
-    
+
+        assert os.path.isfile(csv_path)
+
     def from_csv(self, csv_path):
         """ Create a database from an existing csv file
         :param str csv_path Source path of the csv file user for import
         """
+        assert os.path.isfile(csv_path)
+        
         db_dirname, _ = os.path.splitext(csv_path)
         self.create_db(db_dirname)
         self.use_db(db_dirname) 
@@ -392,4 +443,3 @@ class DbManager(object):
                         current_row = int(elements[1])
                     new_row[elements[2]] = elements[3]
         fd.close()
-    pass
