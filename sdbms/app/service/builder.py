@@ -10,7 +10,7 @@ class QueryBuilder(object):
         keys = list()
         operators = list()
         values = list()
-
+        assert(table_name)
         for element in args[0]:
             if "myLabel" in element:
                 labels.append(args[0][element])
@@ -54,6 +54,7 @@ class QueryBuilder(object):
         values = list()
         query = "insert into " + table_name + " values "
         counter = 1
+        assert (table_name)
         for element in args[0]:
             if counter>=3:
                 if counter %2 == 1:
@@ -72,6 +73,7 @@ class QueryBuilder(object):
             query += " " + keys[i] + "=" + values[i]
         query += ";"
         print(query)
+        assert(query)
         return query
 
     def build_delete(self, *args):
@@ -81,6 +83,7 @@ class QueryBuilder(object):
         keys = list()
         operators = list()
         values = list()
+        assert (table_name)
         for element in args[0]:
             if counter >= 4:
                 if counter % 3 == 1:
@@ -104,6 +107,7 @@ class QueryBuilder(object):
                 query += " " + keys[i] + operators[i] + values[i]
         query += ";"
         print(query)
+        assert (query)
         return query
 
     def build_update(self, *args):
@@ -115,6 +119,7 @@ class QueryBuilder(object):
         operators = list()
         values = list()
         counter = 1
+        assert (table_name)
         for element in args[0]:
             if "myLabel" in element:
                 if counter % 2 == 1:
@@ -155,10 +160,13 @@ class QueryBuilder(object):
                 query+= " "+keys[i] + operators[i] + values[i]
         query+= ";"
         print(query)
+        assert (query)
         return query
 
     def use_db(self, *args):
         database_name = args[0]['DbName']
         query = "use sdb " + database_name +";"
         print(query)
+        assert(database_name)
+        assert (query)
         return query
