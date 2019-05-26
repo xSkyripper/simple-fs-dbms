@@ -224,7 +224,7 @@ First of all, we need to introduce the grammar-objects implemented to ease the p
 
 
 `QueryParser`
-This is the class which interprets the input database queries and returns a specific 'command' object (which we'll describe later).
+This is the class which interprets the input database queries and returns a specific 'command' object (which we'll describe later). This class uses method `parser` to parse an input query and return the specified 'command' object if it respects the syntax or `None` if not.
 
 
 
@@ -315,10 +315,33 @@ __All examples of recognized__:
 
 ```
 
+The 'commands' objects which are returned by `QueryParser` receive the arguments needed on initialization. They also have an `execute` method which uses a manager (example: `DbManager` described above) to modify the file system. These are:
+
+* `CreateDbCmd`: creates a database
+* `UseDbCmd`: sets a database as current
+* `DeleteDbCmd`: deletes a database
+* `CreateTableCmd`: creates a table
+* `DeleteTable`: deletes a table
+* `AddColumnCmd`: adds a column to a table
+* `DelColumnCmd`: deletes a column from a table
+* `InsertCmd`: inserts a record
+* `QueryCmd`: queries the records
+* `DeleteCmd`: deletes records
+* `UpdateCmd`: updates records
+* `FromCsvCmd`: imports a database from a CSV
+* `ToCsvCmd`: exports a database to a CSV
+* `SchemaCmd`: shows the schema of a table
+* `TablesCmd`: shows all the tables in the current database
+* `DbCmd`: shows the current database
 
 ### Database object & CLI
 
-### Importing/Exporting CSV
+`SimpleDb`
+
+This class can be used by developers in code to query and use databases. It uses a `QueryParser` and a `DbManager` in order to achieve the specified.
+Object has method `execute` which interprets and takes action using the input query.
+
+CLI can be used interactively by the user to do all the above.
 
 ### Web UI
 
