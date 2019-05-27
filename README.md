@@ -267,5 +267,39 @@ CLI can be used interactively by the user to do all the above.
 
 ## Testing & guardrails
 
+Unit tests we have managed to write are for:
+
+* `DbManager`
+* `QueryParser`
+* `SimpleDb`
+* `QueryBuilder`
+
+Coverage of the tests:
+
+```
+---------- coverage: platform darwin, python 3.7.3-final-0 -----------
+Name                              Stmts   Miss  Cover
+-----------------------------------------------------
+sdbms/__init__.py                     1      0   100%
+sdbms/app/__init__.py                 7      5    29%
+sdbms/app/service/__init__.py         0      0   100%
+sdbms/app/service/builder.py        164     13    92%
+sdbms/app/templates/__init__.py       0      0   100%
+sdbms/app/views.py                   76     76     0%
+sdbms/core/__init__.py                2      0   100%
+sdbms/core/_manager.py              211      0   100%
+sdbms/core/_parser.py               325     60    82%
+sdbms/db.py                           8      0   100%
+-----------------------------------------------------
+TOTAL                               794    154    81%
+Coverage HTML written to dir htmlcov
+
+====================================================================== 167 passed, 2 warnings in 1.59 seconds =======================================================================
+```
+
+
+
 ## What this DBMS does not support
 
+* Other data type than integer, string, boolean
+* Combined conditions with `and` or `or` (only one of them is allowed)
