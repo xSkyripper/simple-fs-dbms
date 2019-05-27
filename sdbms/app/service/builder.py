@@ -1,8 +1,30 @@
 class QueryBuilder(object):
+    """
+    Class used for query building.
+
+    Each method builds a different type for query.
+
+
+    """
     def __init__(self):
         pass
 
     def build_select(self,*args):
+        """
+        Return query for select based on arguments
+
+        Table_name is the only mandatory argument
+
+        Conditiions and operator are optional arguments.
+
+        For each condition you will have a tuple of 3 elements
+            1. Key witch represents the column name
+            2. Operator
+            3. Value
+
+        :param args: list of arguments send from front-end.
+        :return: str
+        """
         table_name = args[0]['TableName']
         condition_type = args[0]['conditionType']
         counter = 1
@@ -170,6 +192,12 @@ class QueryBuilder(object):
         return query
 
     def use_db(self, *args):
+        """
+        Query needed to select the certain database.
+        If this operation fails, you will not be able to do any query in the database
+        :param args: list or aguments witch contains 'database_name'
+        :return: str
+        """
         database_name = args[0]['DbName']
         query = "use sdb " + database_name +";"
         print(query)
