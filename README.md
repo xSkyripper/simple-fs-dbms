@@ -309,8 +309,37 @@ Coverage HTML written to dir htmlcov
 === 167 passed, 2 warnings in 1.59 seconds ===
 ```
 
+### Guardrails
+
 Various pre-condition/post-condition guardrails are scattered among the Db Manager and the commands in order to verify things like: existence of entities, correctness of intermediate data, correctness of input query, correctness of types and how data is evaluated etc.
 
+
+__Example 1: Checking that the on creating a table, only some data types are allowed__
+
+```python
+if set(self.schema.values()) - SCHEMA_TYPES:
+  raise CommandError(f'Only schema accepted types are {SCHEMA_TYPES}')
+```
+
+__Example 2: Checking that the column does not exist on adding it on a table__
+
+```python
+  if self.col_name in schema:
+    raise CommandError(f'{self.col_name} col is already existing')
+ ```
+
+__Example 3: Reusable validation function for a condition list used to check that the columns exist and that the input data respects the data types__
+```python
+def validate_cmd_conditions_list(schema={}, conditions_list=[]):
+    for comparison in conditions_list.comparisons:
+        col = comparison.left
+        lit = comparison.right
+        needed_col_type = eval(schema[col.name])
+        if col.name not in schema:
+            raise CommandError(f'Col {col.name} in conditions does not exist in schema')
+        if not isinstance(lit.value, needed_col_type):
+            raise CommandError(f'Col\'s {col.name} value {lit.value} has to be {schema[col.name]}')
+```
 
 ## What this DBMS does not support
 
