@@ -1,5 +1,5 @@
 # simple-fs-dbms
-Simple FileSystem DBMS
+Simple FileSystem DBMS is a database system implemented using the OS File system to store the data, regex to interpret the queries and a set of commands to achieve the CRUD of various entities.
 
 ## Usage
 #### Requirements:
@@ -265,23 +265,17 @@ CLI can be used interactively by the user to do all the above.
 
 ### Web UI
 
-Web api that builds the query and sends it to the query manager.
+Web API that builds the query and sends it to the query manager.
 
 Each route will represent a different CRUD operation and for each operation you will need
 to send a form with the certain data, and as result we will receive a html page.
 
-1.'/' we will display the menu that will give you all the hiperlinks for each operation.
-
-2.'/select' page used for building the select query. Some fields of this form ar optional.
-As a result, you will receive a page witch contains the selected rows.
-
-3.'/insert' page used for building the insert query. For this one you will need to press the 
+1. `/` we will display the menu that will give you all the hiperlinks for each operation.
+1. `/select` page used for building the select query. Some fields of this form ar optional. As a result, you will receive a page witch contains the selected rows.
+1. `/insert` page used for building the insert query. For this one you will need to press the 
 '+' button and fill the fields. As a response, you will receive a success message or an exception if something went wrong
-
-4.'/delete' page use for deleting a row. As a response you will receive success or expcetion.
-
-5.'/update' page used for updating a row. You will need to fill the labels, conditions and values.
-As a response you will receive a successs message or an exception.
+1. `/delete` page use for deleting a row. As a response you will receive success or expcetion.
+1. `/update` page used for updating a row. You will need to fill the labels, conditions and values. As a response you will receive a successs message or an exception.
 
 ## Testing & guardrails
 
