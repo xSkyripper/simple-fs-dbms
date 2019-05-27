@@ -294,7 +294,7 @@ sdbms/db.py                           8      0   100%
 TOTAL                               794    154    81%
 Coverage HTML written to dir htmlcov
 
-====================================================================== 167 passed, 2 warnings in 1.59 seconds =======================================================================
+=== 167 passed, 2 warnings in 1.59 seconds ===
 ```
 
 
