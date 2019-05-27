@@ -297,6 +297,7 @@ Coverage HTML written to dir htmlcov
 === 167 passed, 2 warnings in 1.59 seconds ===
 ```
 
+Various pre-condition/post-condition guardrails are scattered among the Db Manager and the commands in order to verify things like: existence of entities, correctness of intermediate data, correctness of input query, correctness of types and how data is evaluated etc.
 
 
 ## What this DBMS does not support
